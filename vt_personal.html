@@ -1,0 +1,933 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VT Personal - Inteligência & Treinos</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Phosphor Icons CDN -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <!-- Google Fonts Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f5f3ff',
+                            100: '#ede9fe',
+                            200: '#ddd6fe',
+                            300: '#c4b5fd',
+                            400: '#a78bfa',
+                            500: '#8b5cf6',
+                            600: '#7c3aed',
+                            700: '#6d28d9',
+                            800: '#5b21b6',
+                            900: '#4c1d95',
+                            950: '#2e1065',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #f1f1f7; }
+        ::-webkit-scrollbar-thumb { background: #a78bfa; border-radius: 99px; }
+        ::-webkit-scrollbar-thumb:hover { background: #7c3aed; }
+        
+        .tab-btn.active {
+            color: #7c3aed;
+            border-bottom-color: #7c3aed;
+            background-color: rgba(245, 243, 255, 0.6);
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(12px);
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 antialiased min-h-screen flex flex-col selection:bg-brand-500 selection:text-white">
+
+    <!-- Top Navigation Header -->
+    <header class="bg-gradient-to-r from-brand-950 via-brand-900 to-brand-800 text-white shadow-xl sticky top-0 z-30">
+        <div class="max-w-6xl mx-auto px-4 py-3.5 flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <div class="bg-white/10 p-2 rounded-xl backdrop-blur-md border border-white/15 shadow-inner">
+                    <i class="ph-fill ph-barbell text-2xl text-brand-300"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-extrabold tracking-tight bg-gradient-to-r from-white via-brand-100 to-brand-300 bg-clip-text text-transparent">
+                        VT Personal
+                    </h1>
+                    <p class="text-[10px] text-brand-200 tracking-wider font-medium uppercase">Seu Treino Inteligente</p>
+                </div>
+            </div>
+
+            <!-- Sync & Profile Status Indicator -->
+            <div id="status-badge" class="flex items-center gap-2 bg-brand-950/60 px-3 py-1.5 rounded-full border border-brand-700/50 text-xs font-semibold text-brand-200">
+                <span class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
+                <span id="status-text">Conectando...</span>
+            </div>
+        </div>
+
+        <!-- Tab Navigation Bar -->
+        <nav class="bg-white border-b border-brand-100 shadow-sm text-xs sm:text-sm font-semibold">
+            <div class="max-w-6xl mx-auto flex overflow-x-auto no-scrollbar">
+                <button onclick="switchTab('tab-calendar')" id="btn-tab-calendar" class="tab-btn active border-b-2 border-transparent px-5 py-3.5 flex items-center gap-2 whitespace-nowrap transition-all text-slate-600 hover:text-brand-600">
+                    <i class="ph-bold ph-calendar-blank text-lg"></i> Agenda & Treinos
+                </button>
+                <button onclick="switchTab('tab-profile')" id="btn-tab-profile" class="tab-btn border-b-2 border-transparent px-5 py-3.5 flex items-center gap-2 whitespace-nowrap transition-all text-slate-600 hover:text-brand-600">
+                    <i class="ph-bold ph-sparkle text-lg text-brand-500"></i> Perfil & IA Personal
+                </button>
+                <button onclick="switchTab('tab-manual')" id="btn-tab-manual" class="tab-btn border-b-2 border-transparent px-5 py-3.5 flex items-center gap-2 whitespace-nowrap transition-all text-slate-600 hover:text-brand-600">
+                    <i class="ph-bold ph-plus-circle text-lg"></i> Criar Treino Manual
+                </button>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Main Content Body -->
+    <main class="flex-grow max-w-6xl mx-auto w-full px-4 py-6 relative">
+
+        <!-- Custom Notification Modal -->
+        <div id="modal-container" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <div class="bg-white rounded-2xl shadow-2xl border border-brand-100 max-w-md w-full p-6 space-y-4 transform transition-all scale-100">
+                <div class="flex items-center gap-3 text-brand-700">
+                    <div id="modal-icon-bg" class="p-2.5 bg-brand-100 rounded-xl">
+                        <i id="modal-icon" class="ph-fill ph-info text-2xl"></i>
+                    </div>
+                    <h3 id="modal-title" class="text-lg font-bold">Aviso</h3>
+                </div>
+                <p id="modal-body" class="text-slate-600 text-sm leading-relaxed"></p>
+                <div class="flex justify-end pt-2">
+                    <button onclick="closeModal()" class="bg-brand-600 hover:bg-brand-700 text-white font-bold px-5 py-2 rounded-xl text-sm transition-all shadow-md">
+                        Entendi
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 1: CALENDÁRIO & AGENDA -->
+        <section id="tab-calendar" class="tab-content block space-y-6">
+            
+            <!-- Day Filter Bar -->
+            <div class="bg-white p-3 rounded-2xl shadow-sm border border-brand-100 flex items-center justify-between overflow-x-auto gap-2">
+                <button onclick="filterDay('Todos')" class="day-filter-btn active-day px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all bg-brand-600 text-white shadow-sm whitespace-nowrap">
+                    Todos os Dias
+                </button>
+                <button onclick="filterDay('Segunda')" class="day-filter-btn px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all text-slate-600 hover:bg-brand-50 whitespace-nowrap">Segunda</button>
+                <button onclick="filterDay('Terça')" class="day-filter-btn px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all text-slate-600 hover:bg-brand-50 whitespace-nowrap">Terça</button>
+                <button onclick="filterDay('Quarta')" class="day-filter-btn px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all text-slate-600 hover:bg-brand-50 whitespace-nowrap">Quarta</button>
+                <button onclick="filterDay('Quinta')" class="day-filter-btn px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all text-slate-600 hover:bg-brand-50 whitespace-nowrap">Quinta</button>
+                <button onclick="filterDay('Sexta')" class="day-filter-btn px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all text-slate-600 hover:bg-brand-50 whitespace-nowrap">Sexta</button>
+                <button onclick="filterDay('Sábado')" class="day-filter-btn px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all text-slate-600 hover:bg-brand-50 whitespace-nowrap">Sábado</button>
+                <button onclick="filterDay('Domingo')" class="day-filter-btn px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all text-slate-600 hover:bg-brand-50 whitespace-nowrap">Domingo</button>
+            </div>
+
+            <!-- Workouts Container -->
+            <div id="workouts-wrapper" class="space-y-6">
+                <div id="workouts-loading" class="bg-white rounded-2xl p-12 text-center border border-brand-100 shadow-sm flex flex-col items-center justify-center">
+                    <i class="ph ph-spinner animate-spin text-4xl text-brand-600 mb-3"></i>
+                    <p class="text-sm font-semibold text-slate-600">Buscando sua rotina de treinos...</p>
+                </div>
+
+                <div id="workouts-empty" class="hidden bg-white rounded-2xl p-10 text-center border border-brand-100 shadow-sm space-y-4">
+                    <div class="w-16 h-16 mx-auto bg-brand-50 text-brand-600 rounded-2xl flex items-center justify-center text-3xl">
+                        <i class="ph-fill ph-barbell"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-bold text-slate-800">Nenhum treino agendado</h3>
+                        <p class="text-xs text-slate-500 max-w-sm mx-auto mt-1">Preencha seu perfil para gerar um plano personalizado com IA ou crie seus treinos manualmente.</p>
+                    </div>
+                    <div class="flex justify-center gap-3 pt-2">
+                        <button onclick="switchTab('tab-profile')" class="bg-brand-600 hover:bg-brand-700 text-white font-bold px-4 py-2 rounded-xl text-xs transition-all shadow">
+                            <i class="ph-bold ph-sparkle"></i> Gerar com IA
+                        </button>
+                        <button onclick="switchTab('tab-manual')" class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold px-4 py-2 rounded-xl text-xs transition-all">
+                            Criar Manual
+                        </button>
+                    </div>
+                </div>
+
+                <div id="workouts-list" class="grid grid-cols-1 md:grid-cols-2 gap-6 hidden"></div>
+            </div>
+        </section>
+
+        <!-- TAB 2: PERFIL & GERADOR DE IA -->
+        <section id="tab-profile" class="tab-content hidden grid grid-cols-1 lg:grid-cols-12 gap-6">
+            
+            <!-- User Profile Form -->
+            <div class="lg:col-span-5 bg-white rounded-2xl shadow-sm border border-brand-100 overflow-hidden flex flex-col">
+                <div class="bg-gradient-to-r from-brand-900 to-brand-800 px-6 py-4 text-white flex justify-between items-center">
+                    <div>
+                        <h2 class="font-bold text-lg flex items-center gap-2">
+                            <i class="ph-fill ph-user-circle text-brand-300"></i> Meu Perfil Físico
+                        </h2>
+                        <p class="text-xs text-brand-200">Suas características para calibrar a IA</p>
+                    </div>
+                    <span id="imc-badge" class="hidden text-xs px-2.5 py-1 rounded-full bg-white/10 font-bold border border-white/20">
+                        IMC: --
+                    </span>
+                </div>
+
+                <form id="profile-form" class="p-6 space-y-4 flex-grow">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Nome Completo</label>
+                        <input type="text" id="prof-name" required placeholder="Ex: Lucas Silva" 
+                            class="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-brand-500 focus:bg-white outline-none transition-all">
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">Idade</label>
+                            <input type="number" id="prof-age" min="12" max="100" required placeholder="25" 
+                                class="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-brand-500 focus:bg-white outline-none transition-all">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">Gênero</label>
+                            <select id="prof-gender" class="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-brand-500 focus:bg-white outline-none transition-all">
+                                <option value="Masculino">Masculino</option>
+                                <option value="Feminino">Feminino</option>
+                                <option value="Outro">Outro</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">Peso (kg)</label>
+                            <input type="number" id="prof-weight" step="0.1" min="30" max="250" required placeholder="75.5" 
+                                class="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-brand-500 focus:bg-white outline-none transition-all">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">Altura (cm)</label>
+                            <input type="number" id="prof-height" min="100" max="230" required placeholder="175" 
+                                class="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-brand-500 focus:bg-white outline-none transition-all">
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">Experiência</label>
+                            <select id="prof-exp" class="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-brand-500 focus:bg-white outline-none transition-all">
+                                <option value="Iniciante">Iniciante (< 6 meses)</option>
+                                <option value="Intermediário">Intermediário</option>
+                                <option value="Avançado">Avançado</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">Frequência</label>
+                            <select id="prof-days" class="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-brand-500 focus:bg-white outline-none transition-all">
+                                <option value="3">3 dias / sem</option>
+                                <option value="4">4 dias / sem</option>
+                                <option value="5" selected>5 dias / sem</option>
+                                <option value="6">6 dias / sem</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Objetivo Principal</label>
+                        <select id="prof-goal" class="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-brand-500 focus:bg-white outline-none transition-all">
+                            <option value="Hipertrofia e Ganho de Massa">Hipertrofia & Ganho de Massa</option>
+                            <option value="Emagrecimento e Definição">Emagrecimento & Queima de Gordura</option>
+                            <option value="Condicionamento Físico e Saúde">Condicionamento Físico & Resistência</option>
+                            <option value="Força Bruta">Ganho de Força Máxima</option>
+                        </select>
+                    </div>
+
+                    <button type="submit" id="btn-save-profile" class="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-3 px-4 rounded-xl shadow transition-all text-sm flex items-center justify-center gap-2 mt-2">
+                        <i class="ph-bold ph-floppy-disk"></i> Salvar Perfil
+                    </button>
+                </form>
+            </div>
+
+            <!-- Gemini AI Workout Generator Panel -->
+            <div class="lg:col-span-7 bg-gradient-to-br from-brand-950 via-brand-900 to-brand-800 text-white rounded-2xl shadow-xl border border-brand-700 p-8 flex flex-col justify-between relative overflow-hidden">
+                <!-- Background Glowing Effects -->
+                <div class="absolute -right-10 -bottom-10 w-64 h-64 bg-brand-500/20 rounded-full blur-3xl pointer-events-none"></div>
+                <div class="absolute -left-10 -top-10 w-64 h-64 bg-brand-400/10 rounded-full blur-3xl pointer-events-none"></div>
+
+                <div class="space-y-6 relative z-10">
+                    <div class="inline-flex items-center gap-2 px-3 py-1 bg-brand-500/20 border border-brand-400/30 rounded-full text-brand-300 text-xs font-bold">
+                        <i class="ph-fill ph-sparkle"></i> VT Personal IA Engine
+                    </div>
+
+                    <div>
+                        <h2 class="text-2xl sm:text-3xl font-black tracking-tight leading-tight">
+                            Gere sua ficha de treino completa adaptada para o seu corpo
+                        </h2>
+                        <p class="text-brand-200 text-xs sm:text-sm mt-2 leading-relaxed">
+                            Nossa IA analisa suas métricas e gera automaticamente uma rotina semanal equilibrada com séries, repetições, intervalos de descanso e técnicas de execução.
+                        </p>
+                    </div>
+
+                    <div class="bg-brand-950/70 border border-brand-700/60 rounded-2xl p-4 space-y-2 text-xs text-brand-200">
+                        <div class="flex items-center gap-2 font-bold text-white">
+                            <i class="ph-fill ph-check-circle text-emerald-400"></i> O que será gerado:
+                        </div>
+                        <ul class="grid grid-cols-2 gap-2 text-[11px] text-brand-200">
+                            <li>• Divisão semanal estratégica</li>
+                            <li>• Contagem exata de séries/reps</li>
+                            <li>• Tempo de descanso recomendado</li>
+                            <li>• Recomendações de postura e carga</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="pt-8 relative z-10 space-y-3">
+                    <button id="btn-generate-ai" onclick="generateAIWorkout()" class="w-full bg-gradient-to-r from-brand-500 to-brand-600 hover:from-brand-600 hover:to-brand-700 text-white font-extrabold py-4 px-6 rounded-2xl shadow-xl hover:shadow-brand-500/30 transition-all flex items-center justify-center gap-3 text-base transform hover:-translate-y-0.5">
+                        <i class="ph-bold ph-sparkle text-xl"></i> Gerar Ficha de Treino com IA
+                    </button>
+                    <p class="text-[11px] text-center text-brand-300">A rotina gerada será adicionada diretamente ao seu calendário.</p>
+                </div>
+
+                <!-- AI Loading Overlay -->
+                <div id="ai-loading" class="hidden absolute inset-0 bg-brand-950/95 backdrop-blur-md z-20 flex flex-col items-center justify-center p-6 text-center space-y-4">
+                    <div class="relative flex items-center justify-center">
+                        <div class="w-16 h-16 border-4 border-brand-500/30 border-t-brand-400 rounded-full animate-spin"></div>
+                        <i class="ph-fill ph-sparkle text-brand-300 text-2xl absolute"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-bold text-white">VT Personal está montando seu treino...</h3>
+                        <p class="text-xs text-brand-200 max-w-xs mx-auto mt-1">Calculando volume muscular, descanso ideal e divisão de dias.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 3: CRIADOR MANUAL DE TREINOS -->
+        <section id="tab-manual" class="tab-content hidden">
+            <div class="max-w-2xl mx-auto bg-white rounded-2xl shadow-sm border border-brand-100 overflow-hidden">
+                <div class="bg-slate-900 px-6 py-4 text-white flex justify-between items-center">
+                    <h2 class="font-bold text-lg flex items-center gap-2">
+                        <i class="ph-fill ph-plus-circle text-brand-400"></i> Criar Treino Personalizado
+                    </h2>
+                    <span class="text-xs text-slate-400">Edição livre</span>
+                </div>
+
+                <form id="manual-workout-form" class="p-6 space-y-5">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">Dia da Semana</label>
+                            <select id="man-day" class="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-brand-500 focus:bg-white outline-none">
+                                <option value="Segunda">Segunda-feira</option>
+                                <option value="Terça">Terça-feira</option>
+                                <option value="Quarta">Quarta-feira</option>
+                                <option value="Quinta">Quinta-feira</option>
+                                <option value="Sexta">Sexta-feira</option>
+                                <option value="Sábado">Sábado</option>
+                                <option value="Domingo">Domingo</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">Nome da Ficha/Treino</label>
+                            <input type="text" id="man-title" required placeholder="Ex: Treino A - Peito & Tríceps" 
+                                class="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-brand-500 focus:bg-white outline-none">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Foco / Grupos Musculares</label>
+                        <input type="text" id="man-muscles" required placeholder="Ex: Peitoral Maior, Tríceps, Ombro Anterior" 
+                            class="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-brand-500 focus:bg-white outline-none">
+                    </div>
+
+                    <div class="space-y-3 pt-2">
+                        <div class="flex justify-between items-center border-b border-slate-100 pb-2">
+                            <h3 class="text-xs font-extrabold text-slate-800 uppercase tracking-wider">Exercícios da Ficha</h3>
+                            <button type="button" onclick="addManualExerciseRow()" class="text-xs bg-brand-50 text-brand-700 hover:bg-brand-100 font-bold px-3 py-1.5 rounded-lg flex items-center gap-1 transition-all">
+                                <i class="ph-bold ph-plus"></i> Add Exercício
+                            </button>
+                        </div>
+
+                        <div id="manual-exercises-container" class="space-y-3 max-h-80 overflow-y-auto pr-1"></div>
+                    </div>
+
+                    <button type="submit" id="btn-save-manual" class="w-full bg-brand-600 hover:bg-brand-700 text-white font-bold py-3.5 px-4 rounded-xl shadow-md transition-all text-sm flex items-center justify-center gap-2 mt-4">
+                        <i class="ph-bold ph-check"></i> Salvar Treino na Agenda
+                    </button>
+                </form>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Floating Interactive Rest Timer Widget -->
+    <div id="rest-timer-widget" class="fixed bottom-4 right-4 z-40 bg-slate-900 text-white p-4 rounded-2xl shadow-2xl border border-brand-500/40 hidden flex-col w-72 backdrop-blur-md transition-all transform">
+        <div class="flex justify-between items-center mb-2 border-b border-slate-800 pb-2">
+            <div class="flex items-center gap-2">
+                <i class="ph-fill ph-timer text-brand-400 text-xl animate-pulse"></i>
+                <span class="text-xs font-bold text-slate-200">Timer de Descanso</span>
+            </div>
+            <button onclick="closeTimerWidget()" class="text-slate-400 hover:text-white text-xs">
+                <i class="ph-bold ph-x text-base"></i>
+            </button>
+        </div>
+        
+        <div class="text-center py-2">
+            <span id="timer-display" class="text-4xl font-black font-mono tracking-wider text-brand-300">00:60</span>
+        </div>
+
+        <div class="flex gap-2 pt-2">
+            <button onclick="addTimerSeconds(15)" class="flex-1 bg-slate-800 hover:bg-slate-700 text-xs font-bold py-1.5 rounded-lg text-brand-200">+15s</button>
+            <button onclick="addTimerSeconds(30)" class="flex-1 bg-slate-800 hover:bg-slate-700 text-xs font-bold py-1.5 rounded-lg text-brand-200">+30s</button>
+            <button onclick="resetTimer()" class="bg-red-500/20 hover:bg-red-500/30 text-red-300 px-3 text-xs font-bold rounded-lg">Reset</button>
+        </div>
+    </div>
+
+    <!-- Firebase Firebase JS SDK Module -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, doc, setDoc, getDoc, addDoc, onSnapshot, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Global State & Firebase Refs
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'vt-personal-app';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+        let app, db, auth, currentUser = null;
+        let currentFilterDay = 'Todos';
+        let userProfileData = null;
+        let allWorkoutsList = [];
+
+        // Audio Synth Beep for Timer Completion
+        function playBeepSound() {
+            try {
+                const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(880, audioCtx.currentTime); // A5 note
+                gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.5);
+            } catch (e) {
+                console.log("Audio play blocked", e);
+            }
+        }
+
+        // UI Utility Functions
+        window.showMessage = function(title, body, icon = 'ph-info', isError = false) {
+            document.getElementById('modal-title').innerText = title;
+            document.getElementById('modal-body').innerText = body;
+            const iconEl = document.getElementById('modal-icon');
+            iconEl.className = `ph-fill ${icon} text-2xl`;
+            document.getElementById('modal-icon-bg').className = isError ? 'p-2.5 bg-red-100 text-red-600 rounded-xl' : 'p-2.5 bg-brand-100 text-brand-700 rounded-xl';
+            document.getElementById('modal-container').classList.remove('hidden');
+        };
+
+        window.closeModal = function() {
+            document.getElementById('modal-container').classList.add('hidden');
+        };
+
+        window.switchTab = function(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.getElementById(tabId).classList.remove('hidden');
+
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            const btn = document.getElementById(`btn-${tabId}`);
+            if (btn) btn.classList.add('active');
+        };
+
+        window.filterDay = function(day) {
+            currentFilterDay = day;
+            document.querySelectorAll('.day-filter-btn').forEach(btn => {
+                if (btn.innerText.trim() === day || (day === 'Todos' && btn.innerText.includes('Todos'))) {
+                    btn.className = 'day-filter-btn active-day px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all bg-brand-600 text-white shadow-sm whitespace-nowrap';
+                } else {
+                    btn.className = 'day-filter-btn px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all text-slate-600 hover:bg-brand-50 whitespace-nowrap';
+                }
+            });
+            renderWorkouts();
+        };
+
+        // Rest Timer State
+        let timerInterval = null;
+        let timerSeconds = 0;
+
+        window.startRestTimer = function(seconds) {
+            clearInterval(timerInterval);
+            timerSeconds = parseInt(seconds) || 60;
+            const widget = document.getElementById('rest-timer-widget');
+            widget.classList.remove('hidden');
+            widget.classList.add('flex');
+
+            updateTimerDisplay();
+
+            timerInterval = setInterval(() => {
+                timerSeconds--;
+                updateTimerDisplay();
+
+                if (timerSeconds <= 0) {
+                    clearInterval(timerInterval);
+                    playBeepSound();
+                    setTimeout(() => playBeepSound(), 300);
+                }
+            }, 1000);
+        };
+
+        function updateTimerDisplay() {
+            const display = document.getElementById('timer-display');
+            const mins = Math.floor(timerSeconds / 60);
+            const secs = timerSeconds % 60;
+            display.innerText = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+        }
+
+        window.addTimerSeconds = function(sec) {
+            timerSeconds += sec;
+            updateTimerDisplay();
+        };
+
+        window.resetTimer = function() {
+            timerSeconds = 60;
+            updateTimerDisplay();
+        };
+
+        window.closeTimerWidget = function() {
+            clearInterval(timerInterval);
+            document.getElementById('rest-timer-widget').classList.add('hidden');
+        };
+
+        if (firebaseConfig) {
+            app = initializeApp(firebaseConfig);
+            db = getFirestore(app);
+            auth = getAuth(app);
+            initAuth();
+        } else {
+            document.getElementById('status-text').innerText = 'Modo Local';
+            document.getElementById('workouts-loading').classList.add('hidden');
+            document.getElementById('workouts-empty').classList.remove('hidden');
+        }
+
+        async function initAuth() {
+            try {
+                if (initialAuthToken) {
+                    await signInWithCustomToken(auth, initialAuthToken);
+                } else {
+                    await signInAnonymously(auth);
+                }
+
+                onAuthStateChanged(auth, (user) => {
+                    if (user) {
+                        currentUser = user;
+                        document.getElementById('status-badge').innerHTML = `
+                            <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+                            <span class="text-white">Conectado</span>
+                        `;
+                        loadProfile();
+                        listenToWorkouts();
+                    }
+                });
+            } catch (err) {
+                console.error("Auth Exception:", err);
+                document.getElementById('status-text').innerText = 'Erro de Auth';
+            }
+        }
+
+        async function loadProfile() {
+            if (!currentUser) return;
+            const profileRef = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'profile', 'data');
+            try {
+                const snap = await getDoc(profileRef);
+                if (snap.exists()) {
+                    userProfileData = snap.data();
+                    document.getElementById('prof-name').value = userProfileData.name || '';
+                    document.getElementById('prof-age').value = userProfileData.age || '';
+                    document.getElementById('prof-gender').value = userProfileData.gender || 'Masculino';
+                    document.getElementById('prof-weight').value = userProfileData.weight || '';
+                    document.getElementById('prof-height').value = userProfileData.height || '';
+                    document.getElementById('prof-exp').value = userProfileData.exp || 'Iniciante';
+                    document.getElementById('prof-days').value = userProfileData.days || '5';
+                    document.getElementById('prof-goal').value = userProfileData.goal || 'Hipertrofia e Ganho de Massa';
+
+                    calculateIMC(userProfileData.weight, userProfileData.height);
+                }
+            } catch (e) {
+                console.error("Erro ao carregar perfil", e);
+            }
+        }
+
+        function calculateIMC(weight, height) {
+            if (!weight || !height) return;
+            const hM = height / 100;
+            const imc = (weight / (hM * hM)).toFixed(1);
+            const badge = document.getElementById('imc-badge');
+            badge.innerText = `IMC: ${imc}`;
+            badge.classList.remove('hidden');
+        }
+
+        document.getElementById('profile-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (!currentUser) return showMessage("Erro", "Aguarde a conexão com o servidor.", "ph-warning", true);
+
+            const btn = document.getElementById('btn-save-profile');
+            btn.innerHTML = `<i class="ph ph-spinner animate-spin"></i> Salvando...`;
+
+            userProfileData = {
+                name: document.getElementById('prof-name').value,
+                age: parseInt(document.getElementById('prof-age').value),
+                gender: document.getElementById('prof-gender').value,
+                weight: parseFloat(document.getElementById('prof-weight').value),
+                height: parseInt(document.getElementById('prof-height').value),
+                exp: document.getElementById('prof-exp').value,
+                days: document.getElementById('prof-days').value,
+                goal: document.getElementById('prof-goal').value,
+                updatedAt: Date.now()
+            };
+
+            try {
+                const profileRef = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'profile', 'data');
+                await setDoc(profileRef, userProfileData);
+                calculateIMC(userProfileData.weight, userProfileData.height);
+
+                showMessage("Perfil Atualizado!", "Suas características foram salvas com sucesso no banco de dados.", "ph-check-circle");
+            } catch (err) {
+                console.error(err);
+                showMessage("Erro ao salvar", "Não foi possível salvar seu perfil.", "ph-x-circle", true);
+            } finally {
+                btn.innerHTML = `<i class="ph-bold ph-floppy-disk"></i> Salvar Perfil`;
+            }
+        });
+
+        window.generateAIWorkout = async function() {
+            if (!currentUser) {
+                showMessage("Atenção", "Conexão ainda não estabelecida.", "ph-warning", true);
+                return;
+            }
+
+            if (!userProfileData || !userProfileData.weight || !userProfileData.height) {
+                showMessage("Preencha seu Perfil", "Por favor, preencha e salve seu perfil físico antes de gerar o treino.", "ph-user-circle");
+                return;
+            }
+
+            const loading = document.getElementById('ai-loading');
+            loading.classList.remove('hidden');
+
+            const prompt = `Atue como um Personal Trainer de elite. Monte um plano de treino semanal de ${userProfileData.days} dias de treino por semana para um aluno com as seguintes características:
+- Nome: ${userProfileData.name}
+- Idade: ${userProfileData.age} anos
+- Gênero: ${userProfileData.gender}
+- Peso: ${userProfileData.weight}kg, Altura: ${userProfileData.height}cm
+- Nível de Experiência: ${userProfileData.exp}
+- Objetivo Principal: ${userProfileData.goal}
+
+Gere um treino detalhado distribuído entre os dias da semana (Segunda a Domingo).
+Inclua dias de descanso se a frequência for menor que 7 dias.`;
+
+            const payload = {
+                contents: [{ parts: [{ text: prompt }] }],
+                generationConfig: {
+                    responseMimeType: "application/json",
+                    responseSchema: {
+                        type: "ARRAY",
+                        items: {
+                            type: "OBJECT",
+                            properties: {
+                                "dayOfWeek": { "type": "STRING", "description": "Segunda, Terça, Quarta, Quinta, Sexta, Sábado ou Domingo" },
+                                "name": { "type": "STRING", "description": "Nome da ficha de treino ex: Treino A - Peito e Tríceps" },
+                                "muscleGroup": { "type": "STRING", "description": "Grupos musculares foco" },
+                                "exercises": {
+                                    type: "ARRAY",
+                                    items: {
+                                        type: "OBJECT",
+                                        properties: {
+                                            "name": { "type": "STRING", "description": "Nome do exercício" },
+                                            "sets": { "type": "INTEGER", "description": "Número de séries" },
+                                            "reps": { "type": "STRING", "description": "Repetições ex: 10-12" },
+                                            "restSeconds": { "type": "INTEGER", "description": "Descanso em segundos ex: 60" },
+                                            "tips": { "type": "STRING", "description": "Dica de postura/execução" }
+                                        },
+                                        propertyOrdering: ["name", "sets", "reps", "restSeconds", "tips"]
+                                    }
+                                }
+                            },
+                            propertyOrdering: ["dayOfWeek", "name", "muscleGroup", "exercises"]
+                        }
+                    }
+                }
+            };
+
+            const apiKey = ""; // Provided automatically in runtime environment
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+
+            try {
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const data = await response.json();
+
+                if (data.candidates && data.candidates[0]?.content?.parts[0]?.text) {
+                    const generatedWorkouts = JSON.parse(data.candidates[0].content.parts[0].text);
+
+                    // Batch save to Firestore
+                    const workoutsCollection = collection(db, 'artifacts', appId, 'users', currentUser.uid, 'workouts');
+
+                    for (const workout of generatedWorkouts) {
+                        await addDoc(workoutsCollection, {
+                            ...workout,
+                            completed: {},
+                            isAI: true,
+                            createdAt: Date.now()
+                        });
+                    }
+
+                    loading.classList.add('hidden');
+                    showMessage("Treinos Criados!", "Sua ficha semanal gerada pela IA foi adicionada ao calendário com sucesso!", "ph-sparkle");
+                    switchTab('tab-calendar');
+                } else {
+                    throw new Error("Resposta inválida da IA");
+                }
+            } catch (err) {
+                console.error("IA Fetch Error:", err);
+                loading.classList.add('hidden');
+                showMessage("Erro na IA", "Não foi possível gerar o treino no momento. Tente novamente.", "ph-x-circle", true);
+            }
+        };
+
+        const manualContainer = document.getElementById('manual-exercises-container');
+
+        window.addManualExerciseRow = function() {
+            const rowId = 'ex-row-' + Date.now() + '-' + Math.random().toString(36).substr(2, 4);
+            const div = document.createElement('div');
+            div.className = 'manual-row bg-slate-50 border border-slate-200 p-3 rounded-xl flex flex-col gap-2 relative';
+            div.id = rowId;
+            div.innerHTML = `
+                <div class="flex justify-between items-center">
+                    <span class="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">Exercício</span>
+                    <button type="button" onclick="document.getElementById('${rowId}').remove()" class="text-red-400 hover:text-red-600 text-xs font-bold">Remover</button>
+                </div>
+                <input type="text" placeholder="Nome do Exercício" required class="ex-name px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs outline-none focus:ring-1 focus:ring-brand-500">
+                <div class="grid grid-cols-3 gap-2">
+                    <div>
+                        <label class="text-[10px] text-slate-500 block">Séries</label>
+                        <input type="number" placeholder="4" min="1" value="4" required class="ex-sets px-2 py-1 bg-white border border-slate-200 rounded-lg text-xs outline-none">
+                    </div>
+                    <div>
+                        <label class="text-[10px] text-slate-500 block">Reps</label>
+                        <input type="text" placeholder="10-12" value="10-12" required class="ex-reps px-2 py-1 bg-white border border-slate-200 rounded-lg text-xs outline-none">
+                    </div>
+                    <div>
+                        <label class="text-[10px] text-slate-500 block">Descanso (s)</label>
+                        <input type="number" placeholder="60" value="60" required class="ex-rest px-2 py-1 bg-white border border-slate-200 rounded-lg text-xs outline-none">
+                    </div>
+                </div>
+            `;
+            manualContainer.appendChild(div);
+        };
+
+        // Add 3 default rows initially
+        addManualExerciseRow();
+        addManualExerciseRow();
+
+        document.getElementById('manual-workout-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (!currentUser) return showMessage("Erro", "Conexão pendente.", "ph-warning", true);
+
+            const btn = document.getElementById('btn-save-manual');
+            btn.innerHTML = `<i class="ph ph-spinner animate-spin"></i> Salvando...`;
+
+            const dayOfWeek = document.getElementById('man-day').value;
+            const name = document.getElementById('man-title').value;
+            const muscleGroup = document.getElementById('man-muscles').value;
+
+            const exercises = [];
+            document.querySelectorAll('.manual-row').forEach(row => {
+                exercises.push({
+                    name: row.querySelector('.ex-name').value,
+                    sets: parseInt(row.querySelector('.ex-sets').value) || 3,
+                    reps: row.querySelector('.ex-reps').value || '10-12',
+                    restSeconds: parseInt(row.querySelector('.ex-rest').value) || 60,
+                    tips: 'Execução personalizada'
+                });
+            });
+
+            if (exercises.length === 0) {
+                showMessage("Exercícios necessários", "Adicione ao menos 1 exercício.", "ph-warning");
+                btn.innerHTML = `<i class="ph-bold ph-check"></i> Salvar Treino na Agenda`;
+                return;
+            }
+
+            try {
+                await addDoc(collection(db, 'artifacts', appId, 'users', currentUser.uid, 'workouts'), {
+                    dayOfWeek,
+                    name,
+                    muscleGroup,
+                    exercises,
+                    completed: {},
+                    isAI: false,
+                    createdAt: Date.now()
+                });
+
+                document.getElementById('man-title').value = '';
+                document.getElementById('man-muscles').value = '';
+                manualContainer.innerHTML = '';
+                addManualExerciseRow();
+
+                showMessage("Treino Criado!", "Ficha adicionada à sua agenda.", "ph-check-circle");
+                switchTab('tab-calendar');
+            } catch (err) {
+                console.error(err);
+                showMessage("Erro ao salvar", "Tente novamente.", "ph-x-circle", true);
+            } finally {
+                btn.innerHTML = `<i class="ph-bold ph-check"></i> Salvar Treino na Agenda`;
+            }
+        });
+
+        function listenToWorkouts() {
+            if (!currentUser) return;
+            const workoutsRef = collection(db, 'artifacts', appId, 'users', currentUser.uid, 'workouts');
+
+            onSnapshot(workoutsRef, (snapshot) => {
+                allWorkoutsList = [];
+                snapshot.forEach(doc => {
+                    allWorkoutsList.push({ id: doc.id, ...doc.data() });
+                });
+                renderWorkouts();
+            }, (err) => console.error("Snapshot error:", err));
+        }
+
+        window.toggleExerciseComplete = async function(workoutId, exIndex) {
+            if (!currentUser) return;
+            const workout = allWorkoutsList.find(w => w.id === workoutId);
+            if (!workout) return;
+
+            const currentCompleted = workout.completed || {};
+            const newState = !currentCompleted[exIndex];
+
+            const updatedCompleted = { ...currentCompleted, [exIndex]: newState };
+
+            try {
+                const docRef = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'workouts', workoutId);
+                await updateDoc(docRef, { completed: updatedCompleted });
+            } catch (err) {
+                console.error("Toggle complete error", err);
+            }
+        };
+
+        window.deleteWorkout = async function(workoutId) {
+            if (!currentUser) return;
+            try {
+                const docRef = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'workouts', workoutId);
+                await deleteDoc(docRef);
+            } catch (err) {
+                console.error("Delete error", err);
+            }
+        };
+
+        function renderWorkouts() {
+            document.getElementById('workouts-loading').classList.add('hidden');
+            const listEl = document.getElementById('workouts-list');
+            const emptyEl = document.getElementById('workouts-empty');
+
+            let filtered = allWorkoutsList;
+            if (currentFilterDay !== 'Todos') {
+                filtered = allWorkoutsList.filter(w => w.dayOfWeek === currentFilterDay);
+            }
+
+            if (filtered.length === 0) {
+                listEl.classList.add('hidden');
+                emptyEl.classList.remove('hidden');
+                return;
+            }
+
+            emptyEl.classList.add('hidden');
+            listEl.classList.remove('hidden');
+            listEl.innerHTML = '';
+
+            // Order days of the week logically
+            const daysOrder = ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado', 'Domingo'];
+            filtered.sort((a, b) => daysOrder.indexOf(a.dayOfWeek) - daysOrder.indexOf(b.dayOfWeek));
+
+            filtered.forEach(workout => {
+                const totalExercises = workout.exercises ? workout.exercises.length : 0;
+                let completedCount = 0;
+                if (workout.completed) {
+                    completedCount = Object.values(workout.completed).filter(Boolean).length;
+                }
+                const progressPct = totalExercises > 0 ? Math.round((completedCount / totalExercises) * 100) : 0;
+
+                const card = document.createElement('div');
+                card.className = 'bg-white rounded-2xl border border-brand-100/80 shadow-sm p-5 space-y-4 hover:shadow-md transition-all relative overflow-hidden flex flex-col justify-between';
+
+                let exercisesHtml = '';
+                if (workout.exercises) {
+                    workout.exercises.forEach((ex, idx) => {
+                        const isDone = workout.completed && workout.completed[idx];
+                        exercisesHtml += `
+                            <div class="flex items-start justify-between bg-slate-50 p-3 rounded-xl border border-slate-100 gap-3">
+                                <div class="flex items-start gap-2.5">
+                                    <input type="checkbox" ${isDone ? 'checked' : ''} 
+                                        onchange="toggleExerciseComplete('${workout.id}', ${idx})"
+                                        class="mt-1 w-4 h-4 text-brand-600 rounded border-slate-300 focus:ring-brand-500 cursor-pointer">
+                                    <div>
+                                        <p class="text-xs font-bold ${isDone ? 'line-through text-slate-400' : 'text-slate-800'}">${ex.name}</p>
+                                        <p class="text-[11px] text-slate-500 mt-0.5">${ex.sets} séries × ${ex.reps} repetições</p>
+                                        ${ex.tips ? `<p class="text-[10px] text-brand-600 font-medium mt-1"><i class="ph-fill ph-lightbulb"></i> ${ex.tips}</p>` : ''}
+                                    </div>
+                                </div>
+                                <button onclick="startRestTimer(${ex.restSeconds || 60})" class="bg-brand-50 hover:bg-brand-100 text-brand-700 font-semibold px-2.5 py-1 rounded-lg text-[11px] flex items-center gap-1 transition-all whitespace-nowrap">
+                                    <i class="ph-bold ph-timer"></i> ${ex.restSeconds || 60}s
+                                </button>
+                            </div>
+                        `;
+                    });
+                }
+
+                card.innerHTML = `
+                    <div class="space-y-3">
+                        <div class="flex justify-between items-start">
+                            <div class="space-y-1">
+                                <span class="bg-brand-100 text-brand-800 text-[10px] font-extrabold px-2.5 py-0.5 rounded-full uppercase tracking-wider">
+                                    ${workout.dayOfWeek}
+                                </span>
+                                <h3 class="font-extrabold text-slate-800 text-base leading-tight flex items-center gap-1.5">
+                                    ${workout.name}
+                                    ${workout.isAI ? '<i class="ph-fill ph-sparkle text-brand-500 text-xs" title="Gerado por IA"></i>' : ''}
+                                </h3>
+                                <p class="text-xs text-slate-500">${workout.muscleGroup}</p>
+                            </div>
+                            <button onclick="deleteWorkout('${workout.id}')" class="text-slate-300 hover:text-red-500 transition-colors p-1" title="Excluir treino">
+                                <i class="ph-bold ph-trash text-lg"></i>
+                            </button>
+                        </div>
+
+                        <!-- Progress Bar -->
+                        <div class="space-y-1">
+                            <div class="flex justify-between text-[11px] font-bold text-slate-500">
+                                <span>Progresso</span>
+                                <span class="${progressPct === 100 ? 'text-emerald-600' : 'text-brand-600'}">${progressPct}% Completo</span>
+                            </div>
+                            <div class="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
+                                <div class="bg-gradient-to-r from-brand-500 to-brand-600 h-full rounded-full transition-all duration-300" style="width: ${progressPct}%"></div>
+                            </div>
+                        </div>
+
+                        <!-- Exercise List -->
+                        <div class="space-y-2 pt-1">
+                            ${exercisesHtml}
+                        </div>
+                    </div>
+                `;
+                listEl.appendChild(card);
+            });
+        }
+    </script>
+</body>
+</html>
